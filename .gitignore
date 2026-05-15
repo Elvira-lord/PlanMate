@@ -1,0 +1,35 @@
+dev-log.md
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+
+# Uploads
+backend/uploads/
+
+# Build output
+dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Sensitive / test files
+ai_test.txt
+README.md.bak
+backend/test-avatar.png
+missing-features.md

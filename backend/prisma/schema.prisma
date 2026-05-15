@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id         BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
+  username   String      @unique @db.VarChar(50)
+  email      String      @unique @db.VarChar(100)
+  password   String      @db.VarChar(255)
+  avatar     String?     @db.VarChar(255)
+  role       String      @default("user") @db.VarChar(20)
+  aiPrompt   String      @default("你是一个待办事项助手，帮用户合理安排任务") @map("ai_prompt") @db.VarChar(255)
+  aiProvider String?     @map("ai_provider") @db.VarChar(50)
+  aiModel    String?     @map("ai_model") @db.VarChar(100)
+  aiBaseUrl  String?     @map("ai_base_url") @db.VarChar(255)
+  aiApiKey   String?     @map("ai_api_key") @db.VarChar(255)
+  createdAt  DateTime    @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt  DateTime    @updatedAt @map("updated_at") @db.DateTime(0)
+  todayTasks       TodayTask[]
+  longTasks        LongTask[]
+  dailyPlans       DailyPlan[]
+  longTaskCheckins LongTaskCheckin[]
+
+  @@map("users")
+}
+
+model TodayTask {
+  id             BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  userId         BigInt   @map("user_id") @db.UnsignedBigInt
+  title          String   @db.VarChar(100)
+  description    String?  @db.Text
+  priority       String   @db.VarChar(10)
+  isCompleted    Boolean  @default(false) @map("is_completed")
+  taskDate       DateTime @map("task_date") @db.Date
+  originalDate   DateTime @map("original_date") @db.Date
+  carryOverCount Int      @default(0) @map("carry_over_count") @db.UnsignedInt
+  sortOrder      Int      @default(0) @map("sort_order")
+  source         String   @db.VarChar(10)
+  createdAt      DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, taskDate], map: "idx_today_tasks_user_date")
+  @@index([userId, isCompleted], map: "idx_today_tasks_user_completed")
+  @@map("today_tasks")
+}
+
+model LongTask {
+  id          BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
+  userId      BigInt           @map("user_id") @db.UnsignedBigInt
+  title       String           @db.VarChar(100)
+  description String?          @db.Text
+  priority    String           @db.VarChar(10)
+  isCompleted Boolean          @default(false) @map("is_completed")
+  startDate   DateTime         @map("start_date") @db.Date
+  source      String           @db.VarChar(10)
+  createdAt   DateTime         @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.DateTime(0)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dailyPlans  DailyPlan[]
+  checkins    LongTaskCheckin[]
+
+  @@index([userId, isCompleted], map: "idx_long_tasks_user_completed")
+  @@map("long_tasks")
+}
+
+model LongTaskCheckin {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  longTaskId BigInt   @map("long_task_id") @db.UnsignedBigInt
+  userId     BigInt   @map("user_id") @db.UnsignedBigInt
+  checkDate  DateTime @map("check_date") @db.Date
+  createdAt  DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  longTask   LongTask @relation(fields: [longTaskId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([longTaskId, checkDate], map: "idx_long_task_checkin_unique")
+  @@index([userId, checkDate], map: "idx_long_task_checkins_user_date")
+  @@map("long_task_checkins")
+}
+
+model DailyPlan {
+  id          BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  longTaskId  BigInt   @map("long_task_id") @db.UnsignedBigInt
+  userId      BigInt   @map("user_id") @db.UnsignedBigInt
+  content     String   @db.VarChar(255)
+  planDate    DateTime @map("plan_date") @db.Date
+  isCompleted Boolean  @default(false) @map("is_completed")
+  createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+  longTask    LongTask @relation(fields: [longTaskId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, planDate], map: "idx_daily_plans_user_date")
+  @@index([longTaskId], map: "idx_daily_plans_long_task")
+  @@map("daily_plans")
+}
